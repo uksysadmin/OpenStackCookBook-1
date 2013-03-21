@@ -44,65 +44,37 @@ keystone role-create --name admin
 # Member role
 keystone role-create --name Member
 
-keystone tenant-create \
-    --name cookbook \ 
-    --description "Default Cookbook Tenant" \
-    --enabled true
+keystone tenant-create --name cookbook --description "Default Cookbook Tenant" --enabled true
 
-TENANT_ID=$(keystone tenant-list \
-    | awk '/\ cookbook\ / {print $2}')
+TENANT_ID=$(keystone tenant-list | awk '/\ cookbook\ / {print $2}')
 
-PASSWORD=openstack
-keystone user-create \
-    --name admin \
-    --tenant_id $TENANT_ID \
-    --pass $PASSWORD \
-    --email root@localhost \
-    --enabled true
+export PASSWORD=openstack
+keystone user-create --name admin --tenant_id $TENANT_ID --pass $PASSWORD --email root@localhost --enabled true
 
-ROLE_ID=$(keystone role-list \
-    | awk '/\ admin\ / {print $2}')
+ROLE_ID=$(keystone role-list | awk '/\ admin\ / {print $2}')
 
-USER_ID=$(keystone user-list \
-    | awk '/\ admin\ / {print $2}')
+USER_ID=$(keystone user-list | awk '/\ admin\ / {print $2}')
 
-keystone user-role-add \
-    --user $USER_ID \
-    --role $ROLE_ID \
-    --tenant_id $TENANT_ID
+keystone user-role-add --user $USER_ID --role $ROLE_ID --tenant_id $TENANT_ID
 
 # Get the cookbook tenant ID
-TENANT_ID=$(keystone tenant-list \
-    | awk '/\ cookbook\ / {print $2}')
+TENANT_ID=$(keystone tenant-list | awk '/\ cookbook\ / {print $2}')
 
 # Create the user
 PASSWORD=openstack
-keystone user-create \
-    --name demo \
-    --tenant_id $TENANT_ID \
-    --pass $PASSWORD \
-    --email demo@localhost \
-    --enabled true
+keystone user-create --name demo --tenant_id $TENANT_ID --pass $PASSWORD --email demo@localhost --enabled true
 
 # Get the Member role ID
-ROLE_ID=$(keystone role-list \
-    | awk '/\ Member\ / {print $2}')
+ROLE_ID=$(keystone role-list | awk '/\ Member\ / {print $2}')
 
 # Get the demo user ID
-USER_ID=$(keystone user-list \
-    | awk '/\ demo\ / {print $2}')
+USER_ID=$(keystone user-list | awk '/\ demo\ / {print $2}')
 
 # Assign the Member role to the demo user in cookbook
-keystone user-role-add \
-    --user $USER_ID \
-    -–role $ROLE_ID \
-    --tenant_id $TENANT_ID
+keystone user-role-add --user $USER_ID -–role $ROLE_ID --tenant_id $TENANT_ID
 
 # OpenStack Compute Nova API Endpoint
-keystone service-create \
-    --name nova \
-    --type compute \
-    --description 'OpenStack Compute Service'
+keystone service-create --name nova --type compute --description 'OpenStack Compute Service'
 
 # OpenStack Compute EC2 API Endpoint
 keystone service-create \
