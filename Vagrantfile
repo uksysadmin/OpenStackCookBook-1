@@ -15,11 +15,12 @@ Vagrant.configure("2") do |config|
                 box.vm.network :private_network, ip: "172.16.172.#{ip_start+i}", :netmask => "255.255.255.0"
                 box.vm.network :private_network, ip: "172.16.200.#{ip_start+i}", :netmask => "255.255.255.0" 
                 box.vm.provision :shell, :path => "#{prefix}.sh"
-		box.vm.provider :vmware_fusion do |v|
+                box.vm.provider :vmware_fusion do |v|
                     v.vmx["memsize"] = 1024
-                    #v.gui = true
                 end
             end
         end
     end
 end
+
+
