@@ -10,6 +10,7 @@ echo "mysql-server-5.5 mysql-server/root_password_again password $MYSQL_ROOT_PAS
 echo "mysql-server-5.5 mysql-server/root_password seen true" | sudo debconf-set-selections
 echo "mysql-server-5.5 mysql-server/root_password_again seen true" | sudo debconf-set-selections
         
+sudo apt-get update
 sudo apt-get install python-software-properties -y
 sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-trunk-testing
 sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-build-depends
