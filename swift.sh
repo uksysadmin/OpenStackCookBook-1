@@ -11,3 +11,8 @@ sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-trunk-testing
 sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-build-depends
 sudo apt-get update && apt-get upgrade -y
 
+# Install some packages:
+sudo apt-get install -y swift swift-proxy swift-account swift-container swift-object memcached xfsprogs curl
+sudo apt-get -y install ntp
+sudo service ntp restart
+
