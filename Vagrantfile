@@ -1,5 +1,6 @@
 nodes = {
-    'keystone'  => [1, 200],
+    'controller'  => [1, 200],
+    'compute'  => [1, 201],
     'swift'   => [1, 210],
 }
 
@@ -31,7 +32,11 @@ Vagrant.configure("2") do |config|
                 end
                 # Otherwise using VirtualBox
                 box.vm.provider :virtualbox do |vbox|
-                    vbox.customize ["modifyvm", :id, "--memory", 1024]
+		    # Default to 1Gb RAM
+                    vbox.customize ["modifyvm", :id, "--memory", 2048]
+		    if prefix == "compute"
+                    	vbox.customize ["modifyvm", :id, "--memory", 3127]
+		    end
                 end
             end
         end
