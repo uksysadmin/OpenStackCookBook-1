@@ -1,12 +1,12 @@
 # compute.sh
 
-KEYSTONE_ENDPOINT=172.16.0.200
+KEYSTONE_ENDPOINT=172.16.172.200
 SERVICE_TENANT_NAME=service
 SERVICE_PASS=openstack
 
 nova_compute_install() {
 	export DEBIAN_FRONTEND=noninteractive
-	export ENDPOINT=127.0.0.1
+	export ENDPOINT=${KEYSTONE_ENDPOINT}
 	export SERVICE_TOKEN=ADMIN
 	export SERVICE_ENDPOINT=http://${ENDPOINT}:35357/v2.0
 
@@ -45,14 +45,14 @@ connection_type=libvirt
 libvirt_type=qemu
 
 # Database
-sql_connection=mysql://nova:openstack@172.16.0.1/nova
+sql_connection=mysql://nova:openstack@172.16.172.200/nova
 
 # Messaging
-rabbit_host=172.16.0.1
+rabbit_host=172.16.172.200
 
 # EC2 API Flags
-ec2_host=172.16.0.1
-ec2_dmz_host=172.16.0.1
+ec2_host=172.16.172.200
+ec2_dmz_host=172.16.172.200
 ec2_private_dns_show_ip=True
 
 # Networking
@@ -61,7 +61,7 @@ force_dhcp_release=True
 
 # Images
 image_service=nova.image.glance.GlanceImageService
-glance_api_servers=172.16.0.1:9292
+glance_api_servers=172.16.172.200:9292
 
 # Scheduler
 scheduler_default_filters=AllHostsFilter
@@ -98,4 +98,4 @@ nova_configure
 nova_restart
 
 # Create a private network
-sudo nova-manage network create privateNet --fixed_range_v4=10.0.0.0/24 --network_size=64 --bridge_interface=eth2
+#sudo nova-manage network create privateNet --fixed_range_v4=10.0.0.0/24 --network_size=64 --bridge_interface=eth2

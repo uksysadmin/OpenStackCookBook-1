@@ -1,4 +1,9 @@
+#/bin/bash
+set -x
+
 # controller.sh
+
+#export LANG=C
 export DEBIAN_FRONTEND=noninteractive
 
 # MySQL
@@ -10,6 +15,9 @@ echo "mysql-server-5.5 mysql-server/root_password password $MYSQL_ROOT_PASS" | s
 echo "mysql-server-5.5 mysql-server/root_password_again password $MYSQL_ROOT_PASS" | sudo debconf-set-selections
 echo "mysql-server-5.5 mysql-server/root_password seen true" | sudo debconf-set-selections
 echo "mysql-server-5.5 mysql-server/root_password_again seen true" | sudo debconf-set-selections
+
+# Set a proxy?
+echo "Acquire::http::Proxy \"http://192.168.1.1:3128\";" | sudo tee /etc/apt/apt.conf
         
 sudo apt-get update
 sudo apt-get install python-software-properties -y
@@ -19,22 +27,32 @@ sudo apt-get update && apt-get upgrade -y
 
 sudo apt-get -y install mysql-server python-mysqldb
 
-sudo sed -i "s/^bind\-address.*/bind-address = ${MYSQL_HOST}/g" /etc/mysql/my.cnf
+sudo sed -i "s/^bind\-address.*/bind-address = 0.0.0.0/g" /etc/mysql/my.cnf
 
 sudo restart mysql
+
+#mysqladmin -uroot -p${MYSQL_ROOT_PASS} password ${MYSQL_ROOT_PASS}
+
+mysql -u root --password=${MYSQL_ROOT_PASS} -h localhost -e "GRANT ALL ON *.* to root@\"localhost\" IDENTIFIED BY \"${MYSQL_ROOT_PASS}\" WITH GRANT OPTION;"
+mysql -u root --password=${MYSQL_ROOT_PASS} -h localhost -e "GRANT ALL ON *.* to root@\"${MYSQL_HOST}\" IDENTIFIED BY \"${MYSQL_ROOT_PASS}\" WITH GRANT OPTION;"
+mysql -u root --password=${MYSQL_ROOT_PASS} -h localhost -e "GRANT ALL ON *.* to root@\"%\" IDENTIFIED BY \"${MYSQL_ROOT_PASS}\" WITH GRANT OPTION;"
+
+mysqladmin -uroot -p${MYSQL_ROOT_PASS} flush-privileges
 
 # Create database
 for d in nova glance cinder keystone quantum
 do
+	echo "Creating $d user and databases"
 	mysql -uroot -p$MYSQL_ROOT_PASS -e "drop database if exists $d;"
 	mysql -uroot -p$MYSQL_ROOT_PASS -e "create database $d;"
-	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"localhost\" identified by \"$MYSQL_DB_PASS\";"
-	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"%\" identified by \"$MYSQL_DB_PASS\";"
+	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"localhost\" identified by \"${MYSQL_DB_PASS}\";"
+	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"${MYSQL_HOST}\" identified by \"${MYSQL_DB_PASS}\";"
+	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"%\" identified by \"${MYSQL_DB_PASS}\";"
 done
 
 sudo apt-get -y install keystone python-keyring
 
-sudo sed -i 's#^connection.*#connection = mysql://keystone:openstack@127.0.0.1/keystone#' /etc/keystone/keystone.conf
+sudo sed -i "s#^connection.*#connection = mysql://keystone:openstack@localhost/keystone#" /etc/keystone/keystone.conf
 
 sudo sed -i 's/^# admin_token.*/admin_token = ADMIN/' /etc/keystone/keystone.conf
 
