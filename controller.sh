@@ -2,13 +2,14 @@
 set -x
 
 # controller.sh
+MY_IP=$(ifconfig eth1 | awk '/inet addr/ {split ($2,A,":"); print A[2]}')
 
 #export LANG=C
 export DEBIAN_FRONTEND=noninteractive
 
 # MySQL
 export MYSQL_ROOT_PASS=openstack
-export MYSQL_HOST=$(ifconfig eth1 | awk '/inet addr/ {split ($2,A,":"); print A[2]}')
+export MYSQL_HOST=$MY_IP
 export MYSQL_DB_PASS=openstack
 
 echo "mysql-server-5.5 mysql-server/root_password password $MYSQL_ROOT_PASS" | sudo debconf-set-selections
@@ -28,31 +29,31 @@ sudo apt-get update && apt-get upgrade -y
 sudo apt-get -y install mysql-server python-mysqldb
 
 sudo sed -i "s/^bind\-address.*/bind-address = 0.0.0.0/g" /etc/mysql/my.cnf
+sudo sed -i "s/^#max_connections.*/max_connections = 512/g" /etc/mysql/my.cnf
 
 sudo restart mysql
 
-#mysqladmin -uroot -p${MYSQL_ROOT_PASS} password ${MYSQL_ROOT_PASS}
-
+# Ensure root can do its job
 mysql -u root --password=${MYSQL_ROOT_PASS} -h localhost -e "GRANT ALL ON *.* to root@\"localhost\" IDENTIFIED BY \"${MYSQL_ROOT_PASS}\" WITH GRANT OPTION;"
 mysql -u root --password=${MYSQL_ROOT_PASS} -h localhost -e "GRANT ALL ON *.* to root@\"${MYSQL_HOST}\" IDENTIFIED BY \"${MYSQL_ROOT_PASS}\" WITH GRANT OPTION;"
 mysql -u root --password=${MYSQL_ROOT_PASS} -h localhost -e "GRANT ALL ON *.* to root@\"%\" IDENTIFIED BY \"${MYSQL_ROOT_PASS}\" WITH GRANT OPTION;"
 
 mysqladmin -uroot -p${MYSQL_ROOT_PASS} flush-privileges
 
-# Create database
-for d in nova glance cinder keystone quantum
-do
-	echo "Creating $d user and databases"
-	mysql -uroot -p$MYSQL_ROOT_PASS -e "drop database if exists $d;"
-	mysql -uroot -p$MYSQL_ROOT_PASS -e "create database $d;"
-	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"localhost\" identified by \"${MYSQL_DB_PASS}\";"
-	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"${MYSQL_HOST}\" identified by \"${MYSQL_DB_PASS}\";"
-	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"%\" identified by \"${MYSQL_DB_PASS}\";"
-done
+######################
+# Chapter 1 KEYSTONE #
+######################
 
+# Create database
 sudo apt-get -y install keystone python-keyring
 
-sudo sed -i "s#^connection.*#connection = mysql://keystone:openstack@localhost/keystone#" /etc/keystone/keystone.conf
+MYSQL_ROOT_PASS=openstack
+MYSQL_KEYSTONE_PASS=openstack
+mysql -uroot -p$MYSQL_ROOT_PASS -e 'CREATE DATABASE keystone;'
+mysql -uroot -p$MYSQL_ROOT_PASS -e "GRANT ALL PRIVILEGES ON keystone.* TO 'keystone'@'%';"
+mysql -uroot -p$MYSQL_ROOT_PASS -e "SET PASSWORD FOR 'keystone'@'%' = PASSWORD('$MYSQL_KEYSTONE_PASS');"
+
+sudo sed -i "s#^connection.*#connection = mysql://keystone:openstack@${MYSQL_HOST}/keystone#" /etc/keystone/keystone.conf
 
 sudo sed -i 's/^# admin_token.*/admin_token = ADMIN/' /etc/keystone/keystone.conf
 
@@ -200,3 +201,114 @@ CINDER_USER_ID=$(keystone user-list | awk '/\ cinder \ / {print $2}')
 
 # Assign the cinder user the admin role in service tenant
 keystone user-role-add --user $CINDER_USER_ID --role $ADMIN_ROLE_ID --tenant_id $SERVICE_TENANT_ID
+
+######################
+# Chapter 2 GLANCE   #
+######################
+
+# Install Service
+sudo apt-get update
+sudo apt-get -y install glance
+#sudo apt-get -y install glance-client # borks because of repo issues. I presume will be fixed.
+
+# Create database
+MYSQL_ROOT_PASS=openstack
+MYSQL_GLANCE_PASS=openstack
+mysql -uroot -p$MYSQL_ROOT_PASS -e 'CREATE DATABASE glance;'
+mysql -uroot -p$MYSQL_ROOT_PASS -e "GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'%';"
+mysql -uroot -p$MYSQL_ROOT_PASS -e "SET PASSWORD FOR 'glance'@'%' = PASSWORD('$MYSQL_GLANCE_PASS');"
+
+# glance-api-paste.ini
+echo "service_protocol = http
+service_host = ${MY_IP}
+service_port = 5000
+auth_host = ${MY_IP}
+auth_port = 35357
+auth_protocol = http
+auth_uri = http://${MY_IP}:5000/
+admin_tenant_name = service
+admin_user = glance
+admin_password = glance
+" | sudo tee -a /etc/glance/glance-api-paste.ini
+
+# glance-api.conf
+echo "config_file = /etc/glance/glance-api-paste.ini
+flavor = keystone
+" | sudo tee -a /etc/glance/glance-api.conf
+
+# glance-registry-paste.ini
+echo "service_protocol = http
+service_host = ${MY_IP}
+service_port = 5000
+auth_host = ${MY_IP}
+auth_port = 35357
+auth_protocol = http
+auth_uri = http://${MY_IP}:5000/
+admin_tenant_name = service
+admin_user = glance
+admin_password = glance
+" | sudo tee -a /etc/glance/glance-registry-paste.ini
+
+# glance-registry.conf
+echo "config_file = /etc/glance/glance-registry-paste.ini
+flavor = keystone
+" | sudo tee -a /etc/glance/glance-registry.conf
+
+sudo restart glance-api
+sudo restart glance-registry
+
+
+# Create database
+MYSQL_ROOT_PASSWORD=openstack
+mysql -uroot -p$MYSQL_ROOT_PASSWORD -e 'CREATE DATABASE glance;'
+mysql -uroot -p${MYSQL_ROOT_PASSWORD} -e "GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'%';"
+
+MYSQL_PASSWORD=openstack
+mysql -uroot -p${MYSQL_ROOT_PASSWORD} -e "SET PASSWORD for 'glance'@'%' = PASSWORD('${MYSQL_PASSWORD}');"
+
+sudo sed -i "s,^sql_connection.*,sql_connection = mysql://glance:${MYSQL_PASSWORD}@${MYSQL_HOST}/glance," /etc/glance/glance-registry.conf
+
+sudo stop glance-registry
+sudo start glance-registry
+
+sudo glance-manage db_sync
+
+mysqladmin -uroot -p${MYSQL_PASSWORD} host-flush
+
+# Get some images and upload
+export OS_TENANT_NAME=cookbook
+export OS_USERNAME=admin
+export OS_PASSWORD=openstack
+export OS_AUTH_URL=http://${MY_IP}:5000/v2.0/
+export OS_NO_CACHE=1
+
+sudo apt-get -y install wget
+wget http://uec-images.ubuntu.com/precise/current/precise-server-cloudimg-amd64-disk1.img
+glance image-create --name='Ubuntu 12.04 x86_64 Server' --disk-format=qcow2 --container-format=bare --public < precise-server-cloudimg-amd64-disk1.img
+
+
+######################
+# Chapter 3 COMPUTE  #
+######################
+
+# Create database
+
+MYSQL_ROOT_PASS=openstack
+MYSQL_NOVA_PASS=openstack
+mysql -uroot -p$MYSQL_ROOT_PASS -e 'CREATE DATABASE nova;'
+mysql -uroot -p$MYSQL_ROOT_PASS -e "GRANT ALL PRIVILEGES ON nova.* TO 'nova'@'%'"
+mysql -uroot -p$MYSQL_ROOT_PASS -e "SET PASSWORD FOR 'nova'@'%' = PASSWORD('$MYSQL_NOVA_PASS');"
+
+
+
+# Nova (Chapter 3)
+#for d in nova glance cinder keystone quantum
+#do
+#	echo "Creating $d user and databases"
+#	mysql -uroot -p$MYSQL_ROOT_PASS -e "drop database if exists $d;"
+#	mysql -uroot -p$MYSQL_ROOT_PASS -e "create database $d;"
+#	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"localhost\" identified by \"${MYSQL_DB_PASS}\";"
+#	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"${MYSQL_HOST}\" identified by \"${MYSQL_DB_PASS}\";"
+#	mysql -uroot -p$MYSQL_ROOT_PASS -e "grant all privileges on $d.* to $d@\"%\" identified by \"${MYSQL_DB_PASS}\";"
+#done
+

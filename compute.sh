@@ -1,5 +1,8 @@
 # compute.sh
 
+# Set a proxy?
+echo "Acquire::http::Proxy \"http://192.168.1.1:3128\";" | sudo tee /etc/apt/apt.conf
+
 KEYSTONE_ENDPOINT=172.16.172.200
 SERVICE_TENANT_NAME=service
 SERVICE_PASS=openstack
