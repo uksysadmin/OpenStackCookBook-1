@@ -64,7 +64,7 @@ sudo keystone-manage db_sync
 
 sudo apt-get -y install python-keystoneclient
 
-export ENDPOINT=127.0.0.1
+export ENDPOINT=${MY_IP}
 export SERVICE_TOKEN=ADMIN
 export SERVICE_ENDPOINT=http://${ENDPOINT}:35357/v2.0
 
