@@ -266,13 +266,13 @@ echo "config_file = /etc/glance/glance-registry-paste.ini
 flavor = keystone
 " | sudo tee -a /etc/glance/glance-registry.conf
 
-sudo restart glance-api
-sudo restart glance-registry
-
-sudo sed -i "s,^sql_connection.*,sql_connection = mysql://glance:${MYSQL_PASSWORD}@${MYSQL_HOST}/glance," /etc/glance/glance-registry.conf
+sudo sed -i "s,^sql_connection.*,sql_connection = mysql://glance:${MYSQL_GLANCE_PASSWORD}@${MYSQL_HOST}/glance," /etc/glance/glance-registry.conf
+sudo sed -i "s,^sql_connection.*,sql_connection = mysql://glance:${MYSQL_GLANCE_PASSWORD}@${MYSQL_HOST}/glance," /etc/glance/glance-api.conf
 
 sudo stop glance-registry
 sudo start glance-registry
+sudo stop glance-api
+sudo start glance-api
 
 sudo glance-manage db_sync
 
