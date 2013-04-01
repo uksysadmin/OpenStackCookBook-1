@@ -21,7 +21,7 @@ nova_compute_install() {
 	sudo apt-get update && apt-get upgrade -y
 
 	# Install some packages:
-	sudo apt-get -y install nova-api-metadata nova-compute nova-compute-qemu nova-doc
+	sudo apt-get -y install nova-api-metadata nova-compute nova-compute-qemu nova-doc nova-network
 	sudo service ntp restart
 }
 
@@ -74,6 +74,7 @@ iscsi_helper=tgtadm
 
 # Auth
 auth_strategy=keystone
+keystone_ec2_url=http://172.16.172.200:5000/v2.0/ec2tokens
 EOF
 
 	sudo rm -f $NOVA_CONF

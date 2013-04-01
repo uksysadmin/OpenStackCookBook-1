@@ -292,6 +292,9 @@ glance image-create --name='Ubuntu 12.04 x86_64 Server' --disk-format=qcow2 --co
 ######################
 
 # Create database
+KEYSTONE_ENDPOINT=172.16.172.200
+SERVICE_TENANT=service
+SERVICE_PASS=nova
 
 MYSQL_ROOT_PASS=openstack
 MYSQL_NOVA_PASS=openstack
@@ -350,6 +353,7 @@ iscsi_helper=tgtadm
 
 # Auth
 auth_strategy=keystone
+keystone_ec2_url=http://172.16.172.200:5000/v2.0/ec2tokens
 EOF
 
 sudo rm -f $NOVA_CONF
