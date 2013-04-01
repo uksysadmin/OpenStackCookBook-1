@@ -299,7 +299,81 @@ mysql -uroot -p$MYSQL_ROOT_PASS -e 'CREATE DATABASE nova;'
 mysql -uroot -p$MYSQL_ROOT_PASS -e "GRANT ALL PRIVILEGES ON nova.* TO 'nova'@'%'"
 mysql -uroot -p$MYSQL_ROOT_PASS -e "SET PASSWORD FOR 'nova'@'%' = PASSWORD('$MYSQL_NOVA_PASS');"
 
-sudo apt-get install rabbitmq-server nova-api nova-scheduler nova-objectstore dnsmasq
+sudo apt-get -y install rabbitmq-server nova-api nova-scheduler nova-objectstore dnsmasq nova-conductor
+
+# Clobber the nova.conf file with the following
+NOVA_CONF=/etc/nova/nova.conf
+NOVA_API_PASTE=/etc/nova/api-paste.ini
+
+cat > /tmp/nova.conf << EOF
+[DEFAULT]
+dhcpbridge_flagfile=/etc/nova/nova.conf
+dhcpbridge=/usr/bin/nova-dhcpbridge
+logdir=/var/log/nova
+state_path=/var/lib/nova
+lock_path=/var/lock/nova
+root_helper=sudo nova-rootwrap /etc/nova/rootwrap.conf
+verbose=True
+
+api_paste_config=/etc/nova/api-paste.ini
+enabled_apis=ec2,osapi_compute,metadata
+
+# Libvirt and Virtualization
+libvirt_use_virtio_for_bridges=True
+connection_type=libvirt
+libvirt_type=qemu
+
+# Database
+sql_connection=mysql://nova:openstack@172.16.172.200/nova
+
+# Messaging
+rabbit_host=172.16.172.200
+
+# EC2 API Flags
+ec2_host=172.16.172.200
+ec2_dmz_host=172.16.172.200
+ec2_private_dns_show_ip=True
+
+# Networking
+public_interface=eth1
+force_dhcp_release=True
+
+# Images
+image_service=nova.image.glance.GlanceImageService
+glance_api_servers=172.16.172.200:9292
+
+# Scheduler
+scheduler_default_filters=AllHostsFilter
+
+# Object Storage
+iscsi_helper=tgtadm
+
+# Auth
+auth_strategy=keystone
+EOF
+
+sudo rm -f $NOVA_CONF
+sudo mv /tmp/nova.conf $NOVA_CONF
+sudo chmod 0640 $NOVA_CONF
+sudo chown nova:nova $NOVA_CONF
+
+# Paste file
+sudo sed -i "s/127.0.0.1/$KEYSTONE_ENDPOINT/g" $NOVA_API_PASTE
+sudo sed -i "s/%SERVICE_TENANT_NAME%/$SERVICE_TENANT/g" $NOVA_API_PASTE
+sudo sed -i "s/%SERVICE_USER%/nova/g" $NOVA_API_PASTE
+sudo sed -i "s/%SERVICE_PASSWORD%/$SERVICE_PASS/g" $NOVA_API_PASTE
+
+sudo nova-manage db sync
+
+sudo stop nova-api
+sudo stop nova-scheduler
+sudo stop nova-objectstore
+sudo stop nova-conductor
+
+sudo start nova-api
+sudo start nova-scheduler
+sudo start nova-objectstore
+sudo start nova-conductor
 
 
 

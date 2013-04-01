@@ -10,7 +10,8 @@ Vagrant.configure("2") do |config|
 
     nodes.each do |prefix, (count, ip_start)|
         count.times do |i|
-            hostname = "%s-%02d" % [prefix, (i+1)]
+            #hostname = "%s-%02d" % [prefix, (i+1)]
+            hostname = "%s" % [prefix, (i+1)]
 
             config.vm.define "#{hostname}" do |box|
                 box.vm.hostname = "#{hostname}.book"

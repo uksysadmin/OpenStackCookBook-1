@@ -71,6 +71,9 @@ scheduler_default_filters=AllHostsFilter
 
 # Object Storage
 iscsi_helper=tgtadm
+
+# Auth
+auth_strategy=keystone
 EOF
 
 	sudo rm -f $NOVA_CONF
@@ -101,4 +104,4 @@ nova_configure
 nova_restart
 
 # Create a private network
-#sudo nova-manage network create privateNet --fixed_range_v4=10.0.0.0/24 --network_size=64 --bridge_interface=eth2
+sudo nova-manage network create privateNet --fixed_range_v4=10.0.0.0/24 --network_size=64 --bridge_interface=eth2
