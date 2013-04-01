@@ -18,7 +18,7 @@ echo "mysql-server-5.5 mysql-server/root_password seen true" | sudo debconf-set-
 echo "mysql-server-5.5 mysql-server/root_password_again seen true" | sudo debconf-set-selections
 
 # Set a proxy?
-echo "Acquire::http::Proxy \"http://192.168.1.1:3128\";" | sudo tee /etc/apt/apt.conf
+echo "Acquire::http::Proxy \"http://172.16.172.110:3128\";" | sudo tee /etc/apt/apt.conf
         
 sudo apt-get update
 sudo apt-get install python-software-properties -y
