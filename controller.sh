@@ -1,15 +1,30 @@
-#/bin/bash
-set -x
+#!/bin/bash
 
 # controller.sh
+
+# Authors: Kevin Jackson (kevin@linuxservices.co.uk)
+#          Cody Bunch (bunchc@gmail.com)
+
+# Set a proxy if one is accessible on your network?
+APT_PROXY="192.168.1.1:3128"
+#
+
+# If you have a proxy outside of your VirtualBox environment, use it
+if [[ ! -z "$APT_PROXY" ]]
+then
+        echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" | sudo tee /etc/apt/apt.conf
+fi
+
+
+# The routeable IP of the node is on our eth1 interface
 MY_IP=$(ifconfig eth1 | awk '/inet addr/ {split ($2,A,":"); print A[2]}')
 
 #export LANG=C
 export DEBIAN_FRONTEND=noninteractive
 
 # MySQL
-export MYSQL_ROOT_PASS=openstack
 export MYSQL_HOST=$MY_IP
+export MYSQL_ROOT_PASS=openstack
 export MYSQL_DB_PASS=openstack
 
 echo "mysql-server-5.5 mysql-server/root_password password $MYSQL_ROOT_PASS" | sudo debconf-set-selections
@@ -17,9 +32,6 @@ echo "mysql-server-5.5 mysql-server/root_password_again password $MYSQL_ROOT_PAS
 echo "mysql-server-5.5 mysql-server/root_password seen true" | sudo debconf-set-selections
 echo "mysql-server-5.5 mysql-server/root_password_again seen true" | sudo debconf-set-selections
 
-# Set a proxy?
-echo "Acquire::http::Proxy \"http://192.168.1.1:3128\";" | sudo tee /etc/apt/apt.conf
-        
 sudo apt-get update
 sudo apt-get install python-software-properties -y
 sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-trunk-testing
@@ -257,23 +269,12 @@ flavor = keystone
 sudo restart glance-api
 sudo restart glance-registry
 
-
-# Create database
-MYSQL_ROOT_PASSWORD=openstack
-mysql -uroot -p$MYSQL_ROOT_PASSWORD -e 'CREATE DATABASE glance;'
-mysql -uroot -p${MYSQL_ROOT_PASSWORD} -e "GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'%';"
-
-MYSQL_PASSWORD=openstack
-mysql -uroot -p${MYSQL_ROOT_PASSWORD} -e "SET PASSWORD for 'glance'@'%' = PASSWORD('${MYSQL_PASSWORD}');"
-
 sudo sed -i "s,^sql_connection.*,sql_connection = mysql://glance:${MYSQL_PASSWORD}@${MYSQL_HOST}/glance," /etc/glance/glance-registry.conf
 
 sudo stop glance-registry
 sudo start glance-registry
 
 sudo glance-manage db_sync
-
-mysqladmin -uroot -p${MYSQL_PASSWORD} host-flush
 
 # Get some images and upload
 export OS_TENANT_NAME=cookbook
@@ -292,7 +293,9 @@ glance image-create --name='Ubuntu 12.04 x86_64 Server' --disk-format=qcow2 --co
 ######################
 
 # Create database
-KEYSTONE_ENDPOINT=172.16.172.200
+MYSQL_HOST=${MY_IP}
+GLANCE_HOST=${MY_IP}
+KEYSTONE_ENDPOINT=${MY_IP}
 SERVICE_TENANT=service
 SERVICE_PASS=nova
 
@@ -327,23 +330,24 @@ connection_type=libvirt
 libvirt_type=qemu
 
 # Database
-sql_connection=mysql://nova:openstack@172.16.172.200/nova
+sql_connection=mysql://nova:openstack@${MYSQL_HOST}/nova
 
 # Messaging
-rabbit_host=172.16.172.200
+rabbit_host=${MYSQL_HOST}
 
 # EC2 API Flags
-ec2_host=172.16.172.200
-ec2_dmz_host=172.16.172.200
+ec2_host=${MYSQL_HOST}
+ec2_dmz_host=${MYSQL_HOST}
 ec2_private_dns_show_ip=True
 
 # Networking
 public_interface=eth1
 force_dhcp_release=True
+auto_assign_floating_ip=True
 
 # Images
 image_service=nova.image.glance.GlanceImageService
-glance_api_servers=172.16.172.200:9292
+glance_api_servers=${GLANCE_HOST}:9292
 
 # Scheduler
 scheduler_default_filters=AllHostsFilter
@@ -353,7 +357,7 @@ iscsi_helper=tgtadm
 
 # Auth
 auth_strategy=keystone
-keystone_ec2_url=http://172.16.172.200:5000/v2.0/ec2tokens
+keystone_ec2_url=http://${KEYSTONE_ENDPOINT}:5000/v2.0/ec2tokens
 EOF
 
 sudo rm -f $NOVA_CONF

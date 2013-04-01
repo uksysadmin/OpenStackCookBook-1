@@ -1,11 +1,28 @@
+#!/bin/bash
+
 # compute.sh
 
-# Set a proxy?
-echo "Acquire::http::Proxy \"http://192.168.1.1:3128\";" | sudo tee /etc/apt/apt.conf
+# Authors: Kevin Jackson (kevin@linuxservices.co.uk)
+#          Cody Bunch (bunchc@gmail.com)
 
-KEYSTONE_ENDPOINT=172.16.172.200
+# Set a proxy if one is accessible on your network?
+APT_PROXY="192.168.1.1:3128"
+#
+
+# Must define your environment
+CONTROLLER_HOST=172.16.0.200
+KEYSTONE_ENDPOINT=${CONTROLLER_HOST}
+MYSQL_HOST=${CONTROLLER_HOST}
 SERVICE_TENANT_NAME=service
 SERVICE_PASS=openstack
+
+
+# If you have a proxy outside of your VirtualBox environment, use it
+if [[ ! -z "$APT_PROXY" ]]
+then
+	echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" | sudo tee /etc/apt/apt.conf
+fi
+
 
 nova_compute_install() {
 	export DEBIAN_FRONTEND=noninteractive
@@ -48,23 +65,24 @@ connection_type=libvirt
 libvirt_type=qemu
 
 # Database
-sql_connection=mysql://nova:openstack@172.16.172.200/nova
+sql_connection=mysql://nova:openstack@${MYSQL_HOST}/nova
 
 # Messaging
-rabbit_host=172.16.172.200
+rabbit_host=${MYSQL_HOST}
 
 # EC2 API Flags
-ec2_host=172.16.172.200
-ec2_dmz_host=172.16.172.200
+ec2_host=${MYSQL_HOST}
+ec2_dmz_host=${MYSQL_HOST}
 ec2_private_dns_show_ip=True
 
 # Networking
 public_interface=eth1
 force_dhcp_release=True
+auto_assign_floating_ip=True
 
 # Images
 image_service=nova.image.glance.GlanceImageService
-glance_api_servers=172.16.172.200:9292
+glance_api_servers=${GLANCE_HOST}:9292
 
 # Scheduler
 scheduler_default_filters=AllHostsFilter
@@ -74,7 +92,7 @@ iscsi_helper=tgtadm
 
 # Auth
 auth_strategy=keystone
-keystone_ec2_url=http://172.16.172.200:5000/v2.0/ec2tokens
+keystone_ec2_url=http://${KEYSTONE_ENDPOINT}:5000/v2.0/ec2tokens
 EOF
 
 	sudo rm -f $NOVA_CONF
@@ -105,4 +123,5 @@ nova_configure
 nova_restart
 
 # Create a private network
-sudo nova-manage network create privateNet --fixed_range_v4=10.0.0.0/24 --network_size=64 --bridge_interface=eth2
+sudo nova-manage network create privateNet --fixed_range_v4=10.0.10.0/24 --network_size=64 --bridge_interface=eth2
+sudo nova-manage floating create --ip_range=172.16.10.0/24
