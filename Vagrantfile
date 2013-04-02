@@ -1,4 +1,5 @@
 nodes = {
+    'proxy'	=> [1, 110],
     'controller'  => [1, 200],
     'compute'  => [1, 201],
     'swift'   => [1, 210],
@@ -23,21 +24,22 @@ Vagrant.configure("2") do |config|
                 # If using Fusion
                 box.vm.provider :vmware_fusion do |v|
                     v.vmx["memsize"] = 1024
-                    if prefix == "swift"
-                        v.gui = true
-                    end
+		    if prefix == "compute"
+			v.vmx["memsize"] = 3127
+		    elsif prefix == "proxy"
+			v.vmx["memsize"] = 512
+		    end
                 end
                 # Otherwise using VirtualBox
                 box.vm.provider :virtualbox do |vbox|
-		    # Default to 1Gb RAM
-                    vbox.customize ["modifyvm", :id, "--memory", 2048]
+                    vbox.customize ["modifyvm", :id, "--memory", 1024]
 		    if prefix == "compute"
                     	vbox.customize ["modifyvm", :id, "--memory", 3127]
+		    elsif prefix == "proxy"
+			vbox.customize ["modifyvm", :id, "--memory", 512]
 		    end
                 end
             end
         end
     end
 end
-
-
