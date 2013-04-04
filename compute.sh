@@ -5,37 +5,13 @@
 # Authors: Kevin Jackson (kevin@linuxservices.co.uk)
 #          Cody Bunch (bunchc@gmail.com)
 
-# Set a proxy if one is accessible on your network?
-APT_PROXY="192.168.1.1:3128"
-#
+source /vagrant/common.sh
 
 # Must define your environment
-CONTROLLER_HOST=172.16.0.200
-KEYSTONE_ENDPOINT=${CONTROLLER_HOST}
 MYSQL_HOST=${CONTROLLER_HOST}
-SERVICE_TENANT_NAME=service
-SERVICE_PASS=openstack
-
-
-# If you have a proxy outside of your VirtualBox environment, use it
-if [[ ! -z "$APT_PROXY" ]]
-then
-	echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" | sudo tee /etc/apt/apt.conf
-fi
 
 
 nova_compute_install() {
-	export DEBIAN_FRONTEND=noninteractive
-	export ENDPOINT=${KEYSTONE_ENDPOINT}
-	export SERVICE_TOKEN=ADMIN
-	export SERVICE_ENDPOINT=http://${ENDPOINT}:35357/v2.0
-
-	# Setup for Grizzly
-	sudo apt-get update
-	sudo apt-get install python-software-properties -y
-	sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-trunk-testing
-	sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-build-depends
-	sudo apt-get update && apt-get upgrade -y
 
 	# Install some packages:
 	sudo apt-get -y install nova-api-metadata nova-compute nova-compute-qemu nova-doc nova-network
