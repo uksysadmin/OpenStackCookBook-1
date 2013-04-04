@@ -1,25 +1,14 @@
 # swift.sh
 
-# Set a proxy?
-echo "Acquire::http::Proxy \"http://172.16.172.110:3128\";" | sudo tee /etc/apt/apt.conf
+source /vagrant/common.sh
 
-KEYSTONE_ENDPOINT=172.16.172.200
-SERVICE_TENANT_NAME=service
-SERVICE_PASS=openstack
-MY_IP=172.16.172.210
+MY_IP=172.16.0.210
 
 swift_install() {
 	export DEBIAN_FRONTEND=noninteractive
 	export ENDPOINT=${KEYSTONE_ENDPOINT}
 	export SERVICE_TOKEN=ADMIN
 	export SERVICE_ENDPOINT=http://${ENDPOINT}:35357/v2.0
-
-	# Setup for Grizzly
-	sudo apt-get update
-	sudo apt-get install python-software-properties -y
-	sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-trunk-testing
-	sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-build-depends
-	sudo apt-get update && apt-get upgrade -y
 
 	# Install some packages:
 	sudo apt-get -y install swift swift-proxy swift-account swift-container swift-object memcached xfsprogs curl python-webob
@@ -312,7 +301,7 @@ sudo cp /vagrant/remakerings.sh /usr/local/bin/
 sudo chmod +x /usr/local/bin/remakerings.sh
 sudo /usr/local/bin/remakerings.sh
 
-export ENDPOINT=172.16.172.200
+export ENDPOINT=172.16.0.200
 export SERVICE_TOKEN=ADMIN
 export SERVICE_ENDPOINT=http://${ENDPOINT}:35357/v2.0
 

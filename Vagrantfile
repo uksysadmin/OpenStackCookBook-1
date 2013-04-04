@@ -18,26 +18,26 @@ Vagrant.configure("2") do |config|
                 box.vm.hostname = "#{hostname}.book"
                 box.vm.network :private_network, ip: "172.16.0.#{ip_start+i}", :netmask => "255.255.0.0"
                 box.vm.network :private_network, ip: "10.0.0.#{ip_start+i}", :netmask => "255.255.0.0" 
-
-	        box.vm.provision :shell, :path => "#{prefix}.sh"
+                box.vm.provision :shell, :path => "#{prefix}.sh"
 
                 # If using Fusion
                 box.vm.provider :vmware_fusion do |v|
                     v.vmx["memsize"] = 1024
-		    if prefix == "compute"
-			v.vmx["memsize"] = 3127
-		    elsif prefix == "proxy"
-			v.vmx["memsize"] = 512
-		    end
+        		    if prefix == "compute"
+		              	v.vmx["memsize"] = 3127
+		            elsif prefix == "proxy"
+			            v.vmx["memsize"] = 512
+		            end
                 end
+
                 # Otherwise using VirtualBox
                 box.vm.provider :virtualbox do |vbox|
                     vbox.customize ["modifyvm", :id, "--memory", 1024]
-		    if prefix == "compute"
+		            if prefix == "compute"
                     	vbox.customize ["modifyvm", :id, "--memory", 3127]
-		    elsif prefix == "proxy"
-			vbox.customize ["modifyvm", :id, "--memory", 512]
-		    end
+		            elsif prefix == "proxy"
+			            vbox.customize ["modifyvm", :id, "--memory", 512]
+		            end
                 end
             end
         end
