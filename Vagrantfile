@@ -33,11 +33,13 @@ Vagrant.configure("2") do |config|
                 # Otherwise using VirtualBox
                 box.vm.provider :virtualbox do |vbox|
                     vbox.customize ["modifyvm", :id, "--memory", 1024]
-		            if prefix == "compute"
+                    vbox.customize ["modifyvm", :id, "--cpus", 1]
+		    if prefix == "compute"
                     	vbox.customize ["modifyvm", :id, "--memory", 3127]
-		            elsif prefix == "proxy"
-			            vbox.customize ["modifyvm", :id, "--memory", 512]
-		            end
+                        vbox.customize ["modifyvm", :id, "--cpus", 2]
+		    elsif prefix == "proxy"
+		        vbox.customize ["modifyvm", :id, "--memory", 512]
+		    end
                 end
             end
         end
