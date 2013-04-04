@@ -5,11 +5,6 @@ source /vagrant/common.sh
 MY_IP=172.16.0.210
 
 swift_install() {
-	export DEBIAN_FRONTEND=noninteractive
-	export ENDPOINT=${KEYSTONE_ENDPOINT}
-	export SERVICE_TOKEN=ADMIN
-	export SERVICE_ENDPOINT=http://${ENDPOINT}:35357/v2.0
-
 	# Install some packages:
 	sudo apt-get -y install swift swift-proxy swift-account swift-container swift-object memcached xfsprogs curl python-webob
 	sudo service ntp restart

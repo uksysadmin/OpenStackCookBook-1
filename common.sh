@@ -8,9 +8,15 @@
 # Sets up common bits used in each build script.
 #
 
-KEYSTONE_ENDPOINT=172.16.0.200
-SERVICE_TENANT_NAME=service
-SERVICE_PASS=openstack
+export DEBIAN_FRONTEND=noninteractive
+
+export CONTROLLER_HOST=172.16.0.200
+export KEYSTONE_ENDPOINT=${CONTROLLER_HOST}
+export SERVICE_TENANT_NAME=service
+export SERVICE_PASS=openstack
+export ENDPOINT=${KEYSTONE_ENDPOINT}
+export SERVICE_TOKEN=ADMIN
+export SERVICE_ENDPOINT=http://${ENDPOINT}:35357/v2.0
 
 # Setup Proxy
 APT_PROXY="172.16.0.110:3128"

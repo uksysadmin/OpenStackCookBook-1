@@ -13,7 +13,6 @@ source /vagrant/common.sh
 MY_IP=$(ifconfig eth1 | awk '/inet addr/ {split ($2,A,":"); print A[2]}')
 
 #export LANG=C
-export DEBIAN_FRONTEND=noninteractive
 
 # MySQL
 export MYSQL_HOST=$MY_IP
