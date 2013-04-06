@@ -1,3 +1,6 @@
+# Common called first, so remove /etc/apt/apt.conf which would've had a proxy line to this host
+rm -f /etc/apt/apt.conf
+
 export DEBIAN_FRONTEND=noninteractive
 apt-get update && apt-get install -y squid
 

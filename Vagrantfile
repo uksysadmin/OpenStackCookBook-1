@@ -25,10 +25,6 @@ Vagrant.configure("2") do |config|
                 box.vm.network :private_network, ip: "172.16.0.#{ip_start+i}", :netmask => "255.255.0.0"
                 box.vm.network :private_network, ip: "10.10.0.#{ip_start+i}", :netmask => "255.255.0.0" 
 
-		if prefix != "proxy"
-		    box.vm.provision :shell, :path => "common.sh"
-		end
-
                 box.vm.provision :shell, :path => "#{prefix}.sh"
 
                 # If using Fusion

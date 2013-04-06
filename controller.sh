@@ -5,7 +5,8 @@
 # Authors: Kevin Jackson (kevin@linuxservices.co.uk)
 #          Cody Bunch (bunchc@gmail.com)
 
-# Set a proxy if one is accessible on your network?
+# Source in common env vars
+. /vagrant/common.sh
 
 # The routeable IP of the node is on our eth1 interface
 MY_IP=$(ifconfig eth1 | awk '/inet addr/ {split ($2,A,":"); print A[2]}')

@@ -5,6 +5,9 @@
 # Authors: Kevin Jackson (kevin@linuxservices.co.uk)
 #          Cody Bunch (bunchc@gmail.com)
 
+# Source in common env vars
+. /vagrant/common.sh
+
 # Must define your environment
 MYSQL_HOST=${CONTROLLER_HOST}
 
