@@ -293,6 +293,10 @@ mysql -uroot -p$MYSQL_ROOT_PASS -e "SET PASSWORD FOR 'nova'@'%' = PASSWORD('$MYS
 
 sudo apt-get -y install rabbitmq-server nova-api nova-scheduler nova-objectstore dnsmasq nova-conductor
 
+# Temp hack because of creation of *.dpkg-new files...
+cd /etc/nova
+ls *.dpkg-new | while read F; do N=$(echo ${F} | cut -d'.' -f1,2); rm -f $N; mv $F $N; done
+
 # Clobber the nova.conf file with the following
 NOVA_CONF=/etc/nova/nova.conf
 NOVA_API_PASTE=/etc/nova/api-paste.ini
