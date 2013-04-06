@@ -7,8 +7,6 @@
 
 # Set a proxy if one is accessible on your network?
 
-source /vagrant/common.sh
-
 # The routeable IP of the node is on our eth1 interface
 MY_IP=$(ifconfig eth1 | awk '/inet addr/ {split ($2,A,":"); print A[2]}')
 
@@ -292,10 +290,6 @@ mysql -uroot -p$MYSQL_ROOT_PASS -e "GRANT ALL PRIVILEGES ON nova.* TO 'nova'@'%'
 mysql -uroot -p$MYSQL_ROOT_PASS -e "SET PASSWORD FOR 'nova'@'%' = PASSWORD('$MYSQL_NOVA_PASS');"
 
 sudo apt-get -y install rabbitmq-server nova-api nova-scheduler nova-objectstore dnsmasq nova-conductor
-
-# Temp hack because of creation of *.dpkg-new files...
-cd /etc/nova
-ls *.dpkg-new | while read F; do N=$(echo ${F} | cut -d'.' -f1,2); rm -f $N; mv $F $N; done
 
 # Clobber the nova.conf file with the following
 NOVA_CONF=/etc/nova/nova.conf

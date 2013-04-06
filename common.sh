@@ -20,6 +20,7 @@ export SERVICE_ENDPOINT=http://${ENDPOINT}:35357/v2.0
 
 # Setup Proxy
 APT_PROXY="172.16.0.110:3128"
+#APT_PROXY="192.168.1.1:3128"
 #
 # If you have a proxy outside of your VirtualBox environment, use it
 if [[ ! -z "$APT_PROXY" ]]
@@ -29,6 +30,5 @@ fi
 
 sudo apt-get update
 sudo apt-get install python-software-properties -y
-sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-trunk-testing
-sudo add-apt-repository ppa:openstack-ubuntu-testing/grizzly-build-depends
+sudo add-apt-repository ppa:ubuntu-cloud-archive/grizzly-staging
 sudo apt-get update && apt-get upgrade -y

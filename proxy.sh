@@ -75,5 +75,3 @@ refresh_pattern .               0       20%     4320
 EOF
 
 service squid3 restart
-
-source /vagrant/common.sh
